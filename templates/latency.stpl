@@ -3,8 +3,8 @@
     <body>
     <h2>Client latency summary</h2>
     <ul>
-    <% for (addr, latency) in latencies { %>
-        <li>Address: <%= addr %>. Average: <%= latency.average %>ns. Rounds: <%= latency.round %></li>
+    <% for (addr, average, round) in latencies { %>
+        <li>Address: <%= addr %>. Average: <%= average %>. Rounds: <%= round %></li>
     <% } %>
     </ul>
     </body>
