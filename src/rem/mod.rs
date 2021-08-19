@@ -60,6 +60,10 @@ impl SharedState {
         Latencies { latencies }
     }
 
+    pub(super) fn clear(&self) {
+        self.inner.lock().latencies = AHashMap::with_capacity(1);
+    }
+
     pub(super) fn update_average(&self, addr: SocketAddr) {
         let mut inner = self.inner.lock();
 

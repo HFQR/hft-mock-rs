@@ -396,10 +396,15 @@ async fn http_handle(
                 .body(Bytes::from(state).into())
                 .unwrap()
         }
-        "/clear" => Response::builder()
-            .status(StatusCode::BAD_REQUEST)
-            .body(Bytes::new().into())
-            .unwrap(),
+        "/clear" => {
+            shared_state.clear();
+
+            Response::builder()
+                .status(StatusCode::SEE_OTHER)
+                .header(header::LOCATION, header::HeaderValue::from_static("/"))
+                .body(Bytes::new().into())
+                .unwrap()
+        }
         _ => Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(Bytes::new().into())

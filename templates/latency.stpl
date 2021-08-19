@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
     <body>
     <h2>Client latency summary</h2>
     <ul>
@@ -7,5 +8,6 @@
         <li>Address: <%= addr %>. Average: <%= average %>. Rounds: <%= round %></li>
     <% } %>
     </ul>
+    <a href="clear">Clear Result</a>
     </body>
 </html>
