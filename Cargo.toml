@@ -27,12 +27,11 @@ mimalloc = { version = "0.1.26", default-features = false }
 tracing-subscriber = "0.2"
 
 [patch.crates-io]
-httparse = { git = "https://github.com/seanmonstar/httparse" }
-
 rem = { path = "../rem" }
-xitca-http = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
-xitca-server = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
-xitca-service = { git = "https://github.com/fakeshadow/xitca-web", branch = "feat/uninit_req_headers" }
+
+xitca-http = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
+xitca-server = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
+xitca-service = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
 
 [profile.release]
 lto = true

@@ -97,39 +97,8 @@ where
                     let shared_state = shared_state.clone();
                     move || {
                         let shared_state = shared_state.clone();
-                        HttpServiceBuilder::h1(fn_service(move |req: Request<RequestBody>| {
-                            let shared_state = shared_state.clone();
-                            async move {
-                                let (parts, _) = req.into_parts();
-
-                                let res = match parts.uri.path() {
-                                    "/" => {
-                                        use sailfish::TemplateOnce;
-                                        let state = shared_state.collect().render_once().unwrap();
-
-                                        Response::builder()
-                                            .status(StatusCode::OK)
-                                            .header(
-                                                header::CONTENT_TYPE,
-                                                header::HeaderValue::from_static(
-                                                    "text/html; charset=utf-8",
-                                                ),
-                                            )
-                                            .body(Bytes::from(state).into())
-                                            .unwrap()
-                                    }
-                                    "/clear" => Response::builder()
-                                        .status(StatusCode::BAD_REQUEST)
-                                        .body(Bytes::new().into())
-                                        .unwrap(),
-                                    _ => Response::builder()
-                                        .status(StatusCode::NOT_FOUND)
-                                        .body(Bytes::new().into())
-                                        .unwrap(),
-                                };
-
-                                Ok::<Response<ResponseBody>, ()>(res)
-                            }
+                        HttpServiceBuilder::h1(fn_service(move |req| {
+                            http_handle(req, shared_state.clone())
                         }))
                     }
                 })?
@@ -138,9 +107,7 @@ where
                     let shared_state = shared_state.clone();
                     let shared_udp = shared_udp.clone();
                     let handler = handler.clone();
-                    fn_service(move |tcp: TcpStream| {
-                        handler(tcp, shared_udp.clone(), shared_state.clone())
-                    })
+                    fn_service(move |tcp| handler(tcp, shared_udp.clone(), shared_state.clone()))
                 })?
                 .build()
                 .await
@@ -407,4 +374,37 @@ fn encode<const N: usize>(write_buf: &mut Buf<N>, response: &mut VecDeque<MsgRes
             }
         }
     }
+}
+
+async fn http_handle(
+    req: Request<RequestBody>,
+    shared_state: SharedState,
+) -> Result<Response<ResponseBody>, Infallible> {
+    let (parts, _) = req.into_parts();
+
+    let res = match parts.uri.path() {
+        "/" => {
+            use sailfish::TemplateOnce;
+            let state = shared_state.collect().render_once().unwrap();
+
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(
+                    header::CONTENT_TYPE,
+                    header::HeaderValue::from_static("text/html; charset=utf-8"),
+                )
+                .body(Bytes::from(state).into())
+                .unwrap()
+        }
+        "/clear" => Response::builder()
+            .status(StatusCode::BAD_REQUEST)
+            .body(Bytes::new().into())
+            .unwrap(),
+        _ => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body(Bytes::new().into())
+            .unwrap(),
+    };
+
+    Ok(res)
 }
