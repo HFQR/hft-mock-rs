@@ -29,9 +29,9 @@ tracing-subscriber = "0.2"
 [patch.crates-io]
 rem = { path = "../rem" }
 
-xitca-http = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
-xitca-server = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
-xitca-service = { git = "https://github.com/fakeshadow/xitca-web", rev = "0cc88bac26bf855ef34b04253c10acabe36ccb79" }
+xitca-http = { git = "https://github.com/fakeshadow/xitca-web", rev = "63c1d9cbb2b4f6faff0491aafef576fcff403609" }
+xitca-server = { git = "https://github.com/fakeshadow/xitca-web", rev = "63c1d9cbb2b4f6faff0491aafef576fcff403609" }
+xitca-service = { git = "https://github.com/fakeshadow/xitca-web", rev = "63c1d9cbb2b4f6faff0491aafef576fcff403609" }
 
 [profile.release]
 lto = true

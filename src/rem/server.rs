@@ -15,7 +15,7 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::UdpSocket,
     select,
-    time::interval,
+    time::{interval, timeout},
 };
 use tracing::{error, info};
 use xitca_http::{
@@ -177,7 +177,8 @@ async fn handle_inner(
 
     let mut buf = Buf::<512>::new();
 
-    let mut read = stream.read(buf.chunk_mut()).await?;
+    let mut read = timeout(Duration::from_secs(3), stream.read(buf.chunk_mut())).await??;
+
     buf.advance_mut(read);
 
     // 匹配信息类型
@@ -287,7 +288,7 @@ async fn handle_inner(
                 }
             }
         }
-        _ => Ok(()),
+        _ => Err("Wrong message type".into()),
     }
 }
 
