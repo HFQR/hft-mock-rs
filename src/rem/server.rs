@@ -6,7 +6,6 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 
-use bytes::Bytes;
 use parking_lot::Mutex;
 use rand::Rng;
 use rem::buf::Buf;
@@ -18,11 +17,6 @@ use tokio::{
     time::{interval, timeout},
 };
 use tracing::{error, info};
-use xitca_http::{
-    h1::RequestBody,
-    http::{header, Request, Response, StatusCode},
-    HttpServiceBuilder, ResponseBody,
-};
 use xitca_server::net::TcpStream;
 use xitca_service::fn_service;
 
@@ -93,14 +87,9 @@ where
                     ready(())
                 })
                 // http服务
-                .bind::<_, _, _, TcpStream>("hft-mock-http", http_addr, {
+                .bind("hft-mock-http", http_addr, {
                     let shared_state = shared_state.clone();
-                    move || {
-                        let shared_state = shared_state.clone();
-                        HttpServiceBuilder::h1(fn_service(move |req| {
-                            http_handle(req, shared_state.clone())
-                        }))
-                    }
+                    move || super::http::factory(shared_state.clone())
                 })?
                 // 仿真rem tcp服务
                 .bind("hft-mock-tcp", addr, move || {
@@ -375,42 +364,4 @@ fn encode<const N: usize>(write_buf: &mut Buf<N>, response: &mut VecDeque<MsgRes
             }
         }
     }
-}
-
-async fn http_handle(
-    req: Request<RequestBody>,
-    shared_state: SharedState,
-) -> Result<Response<ResponseBody>, Infallible> {
-    let (parts, _) = req.into_parts();
-
-    let res = match parts.uri.path() {
-        "/" => {
-            use sailfish::TemplateOnce;
-            let state = shared_state.collect().render_once().unwrap();
-
-            Response::builder()
-                .status(StatusCode::OK)
-                .header(
-                    header::CONTENT_TYPE,
-                    header::HeaderValue::from_static("text/html; charset=utf-8"),
-                )
-                .body(Bytes::from(state).into())
-                .unwrap()
-        }
-        "/clear" => {
-            shared_state.clear();
-
-            Response::builder()
-                .status(StatusCode::SEE_OTHER)
-                .header(header::LOCATION, header::HeaderValue::from_static("/"))
-                .body(Bytes::new().into())
-                .unwrap()
-        }
-        _ => Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .body(Bytes::new().into())
-            .unwrap(),
-    };
-
-    Ok(res)
 }
