@@ -17,10 +17,12 @@ use tokio::{
     time::{interval, timeout},
 };
 use tracing::{error, info};
-use xitca_server::net::TcpStream;
+use xitca_http::{config::HttpServiceConfig, HttpServiceBuilder};
+use xitca_io::net::TcpStream;
 use xitca_service::fn_service;
 
 use super::date::date;
+use super::http::Factory;
 use super::SharedState;
 
 pub fn run<A, A2, A3, A4>(
@@ -89,7 +91,13 @@ where
                 // http服务
                 .bind("hft-mock-http", http_addr, {
                     let shared_state = shared_state.clone();
-                    move || super::http::factory(shared_state.clone())
+                    move || {
+                        let shared_state = shared_state.clone();
+                        let config = HttpServiceConfig::new().disable_vectored_write();
+                        HttpServiceBuilder::h1(Factory::new(shared_state))
+                            .config(config)
+                            .with_logger()
+                    }
                 })?
                 // 仿真rem tcp服务
                 .bind("hft-mock-tcp", addr, move || {

@@ -1,42 +1,33 @@
-use std::{
-    convert::Infallible,
-    future::Future,
-    task::{Context, Poll},
-};
+use std::{convert::Infallible, future::Future};
 
 use bytes::Bytes;
 use xitca_http::{
     h1::RequestBody,
-    http::{header, Request, Response, StatusCode},
-    HttpServiceBuilder, ResponseBody,
+    http::{header, Response, StatusCode},
+    Request, ResponseBody,
 };
-use xitca_server::net::TcpStream;
-use xitca_service::{Service, ServiceFactory};
+use xitca_service::{ready::ReadyService, Service, ServiceFactory};
 
 use super::SharedState;
-use xitca_http::config::HttpServiceConfig;
-
-pub(super) fn factory(shared_state: SharedState) -> impl ServiceFactory<TcpStream, Config = ()> {
-    let config = HttpServiceConfig::new().max_request_headers::<16>();
-    HttpServiceBuilder::h1(Factory { shared_state })
-        .config(config)
-        .with_logger()
-}
 
 #[derive(Clone)]
-struct Factory {
+pub struct Factory {
     shared_state: SharedState,
+}
+
+impl Factory {
+    pub fn new(shared_state: SharedState) -> Self {
+        Self { shared_state }
+    }
 }
 
 impl ServiceFactory<Request<RequestBody>> for Factory {
     type Response = Response<ResponseBody>;
     type Error = Infallible;
-    type Config = ();
     type Service = Factory;
-    type InitError = ();
-    type Future = impl Future<Output = Result<Self::Service, Self::InitError>>;
+    type Future = impl Future<Output = Result<Self::Service, Self::Error>>;
 
-    fn new_service(&self, _: Self::Config) -> Self::Future {
+    fn new_service(&self, _: ()) -> Self::Future {
         let this = self.clone();
         Box::pin(async { Ok(this) })
     }
@@ -46,11 +37,6 @@ impl Service<Request<RequestBody>> for Factory {
     type Response = Response<ResponseBody>;
     type Error = Infallible;
     type Future<'f> = impl Future<Output = Result<Self::Response, Self::Error>>;
-
-    #[inline(always)]
-    fn poll_ready(&self, _: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Poll::Ready(Ok(()))
-    }
 
     fn call(&self, req: Request<RequestBody>) -> Self::Future<'_> {
         async move {
@@ -64,6 +50,16 @@ impl Service<Request<RequestBody>> for Factory {
 
             Ok(res)
         }
+    }
+}
+
+impl ReadyService<Request<RequestBody>> for Factory {
+    type Ready = ();
+    type ReadyFuture<'f> = impl Future<Output = Result<Self::Ready, Self::Error>>;
+
+    #[inline]
+    fn ready(&self) -> Self::ReadyFuture<'_> {
+        async { Ok(()) }
     }
 }
 
