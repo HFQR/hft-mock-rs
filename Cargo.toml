@@ -15,8 +15,8 @@ core_affinity = "0.5.10"
 parking_lot = "0.11.1"
 rand = "0.8.4"
 rem = "0.1"
-sailfish = "0.3.3"
-tokio = { version = "1.17", features = ["io-util", "macros", "rt"] }
+sailfish = "0.8"
+tokio = { version = "1.32", features = ["io-util", "macros", "rt"] }
 tracing = { version = "0.1.26", default-features = false, features = ["std"] }
 
 xitca-http = "0.1"
@@ -31,10 +31,11 @@ tracing-subscriber = "0.2"
 [patch.crates-io]
 rem = { path = "../rem" }
 
-xitca-http = { git = "https://github.com/HFQR/xitca-web", rev = "d001d0c558e227ae512c8fb74465f5c175b18532" }
-xitca-io = { git = "https://github.com/HFQR/xitca-web", rev = "d001d0c558e227ae512c8fb74465f5c175b18532" }
-xitca-server = { git = "https://github.com/HFQR/xitca-web", rev = "d001d0c558e227ae512c8fb74465f5c175b18532" }
-xitca-service = { git = "https://github.com/HFQR/xitca-web", rev = "d001d0c558e227ae512c8fb74465f5c175b18532" }
+xitca-http = { git = "https://github.com/HFQR/xitca-web", rev = "c5b22169db1dde1a2411872cffa5b6bd7e14d2f4" }
+xitca-io = { git = "https://github.com/HFQR/xitca-web", rev = "c5b22169db1dde1a2411872cffa5b6bd7e14d2f4" }
+xitca-server = { git = "https://github.com/HFQR/xitca-web", rev = "c5b22169db1dde1a2411872cffa5b6bd7e14d2f4" }
+xitca-service = { git = "https://github.com/HFQR/xitca-web", rev = "c5b22169db1dde1a2411872cffa5b6bd7e14d2f4" }
+xitca-unsafe-collection = { git = "https://github.com/HFQR/xitca-web", rev = "c5b22169db1dde1a2411872cffa5b6bd7e14d2f4" }
 
 [profile.release]
 lto = true

@@ -3,10 +3,10 @@ use std::{convert::Infallible, future::Future};
 use bytes::Bytes;
 use xitca_http::{
     h1::RequestBody,
-    http::{header, Response, StatusCode},
+    http::{header, RequestExt, Response, StatusCode},
     Request, ResponseBody,
 };
-use xitca_service::{ready::ReadyService, Service, ServiceFactory};
+use xitca_service::{ready::ReadyService, Service};
 
 use super::SharedState;
 
@@ -21,24 +21,29 @@ impl Factory {
     }
 }
 
-impl ServiceFactory<Request<RequestBody>> for Factory {
-    type Response = Response<ResponseBody>;
+impl Service for Factory {
+    type Response = Factory;
     type Error = Infallible;
-    type Service = Factory;
-    type Future = impl Future<Output = Result<Self::Service, Self::Error>>;
+    type Future<'f> = impl Future<Output = Result<Self::Response, Self::Error>> where Self: 'f;
 
-    fn new_service(&self, _: ()) -> Self::Future {
+    fn call<'s>(&'s self, _: ()) -> Self::Future<'s>
+    where
+        (): 's,
+    {
         let this = self.clone();
         Box::pin(async { Ok(this) })
     }
 }
 
-impl Service<Request<RequestBody>> for Factory {
+impl Service<Request<RequestExt<RequestBody>>> for Factory {
     type Response = Response<ResponseBody>;
     type Error = Infallible;
-    type Future<'f> = impl Future<Output = Result<Self::Response, Self::Error>>;
+    type Future<'f> = impl Future<Output = Result<Self::Response, Self::Error>> + 'f where Self: 'f;
 
-    fn call(&self, req: Request<RequestBody>) -> Self::Future<'_> {
+    fn call<'s>(&'s self, req: Request<RequestExt<RequestBody>>) -> Self::Future<'s>
+    where
+        Request<RequestExt<RequestBody>>: 's,
+    {
         async move {
             let (parts, _) = req.into_parts();
 
@@ -53,13 +58,13 @@ impl Service<Request<RequestBody>> for Factory {
     }
 }
 
-impl ReadyService<Request<RequestBody>> for Factory {
+impl ReadyService for Factory {
     type Ready = ();
-    type ReadyFuture<'f> = impl Future<Output = Result<Self::Ready, Self::Error>>;
+    type Future<'f> = impl Future<Output = Self::Ready> where Self: 'f;
 
     #[inline]
-    fn ready(&self) -> Self::ReadyFuture<'_> {
-        async { Ok(()) }
+    fn ready(&self) -> Self::Future<'_> {
+        async {}
     }
 }
 

@@ -52,7 +52,11 @@ where
     A2: ToSocketAddrs,
     A3: ToSocketAddrs,
     A4: ToSocketAddrs,
-    F: Fn(TcpStream, Arc<UdpSocket>, SharedState) -> Fut + Clone + Send + 'static,
+    F: Fn((TcpStream, SocketAddr), Arc<UdpSocket>, SharedState) -> Fut
+        + Clone
+        + Send
+        + Sync
+        + 'static,
     Fut: Future<Output = Result<T, E>>,
 {
     tokio::runtime::Builder::new_current_thread()
@@ -94,9 +98,7 @@ where
                     move || {
                         let shared_state = shared_state.clone();
                         let config = HttpServiceConfig::new().disable_vectored_write();
-                        HttpServiceBuilder::h1(Factory::new(shared_state))
-                            .config(config)
-                            .with_logger()
+                        HttpServiceBuilder::h1(Factory::new(shared_state)).config(config)
                     }
                 })?
                 // 仿真rem tcp服务
@@ -152,11 +154,10 @@ async fn udp_listener(
 }
 
 async fn handle(
-    stream: TcpStream,
+    (stream, addr): (TcpStream, SocketAddr),
     shared_udp: Arc<UdpSocket>,
     state: SharedState,
 ) -> Result<(), Infallible> {
-    let addr = stream.peer_addr().unwrap();
     info!("New connection from {:?}", addr);
     if let Err(e) = handle_inner(stream, shared_udp, addr, state).await {
         error!("Connection from {:?} terminated on error: {:?}", addr, e);
