@@ -6,6 +6,9 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
 
+use super::date::date;
+use super::http::Factory;
+use super::SharedState;
 use parking_lot::Mutex;
 use rand::Rng;
 use rem::buf::Buf;
@@ -20,10 +23,6 @@ use tracing::{error, info};
 use xitca_http::{config::HttpServiceConfig, HttpServiceBuilder};
 use xitca_io::net::TcpStream;
 use xitca_service::fn_service;
-
-use super::date::date;
-use super::http::Factory;
-use super::SharedState;
 
 pub fn run<A, A2, A3, A4>(
     addr: A,
@@ -98,7 +97,9 @@ where
                     move || {
                         let shared_state = shared_state.clone();
                         let config = HttpServiceConfig::new().disable_vectored_write();
-                        HttpServiceBuilder::h1(Factory::new(shared_state)).config(config)
+                        HttpServiceBuilder::h1(Factory::new(shared_state))
+                            .config(config)
+                            .with_logger::<()>()
                     }
                 })?
                 // 仿真rem tcp服务
