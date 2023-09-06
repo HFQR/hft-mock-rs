@@ -4,8 +4,7 @@ mod date;
 mod http;
 
 use std::{net::SocketAddr, sync::Arc, time::Duration};
-
-use ahash::AHashMap;
+use std::collections::HashMap;
 use parking_lot::Mutex;
 use tokio::time::Instant;
 use tracing::trace;
@@ -17,7 +16,7 @@ pub struct SharedState {
 
 struct SharedStateInner {
     last_tick: Instant,
-    latencies: AHashMap<SocketAddr, Latency>,
+    latencies: HashMap<SocketAddr, Latency>,
 }
 
 impl SharedState {
@@ -25,7 +24,7 @@ impl SharedState {
         Self {
             inner: Arc::new(Mutex::new(SharedStateInner {
                 last_tick: Instant::now(),
-                latencies: AHashMap::with_capacity(1),
+                latencies: HashMap::with_capacity(1),
             })),
         }
     }
@@ -62,7 +61,7 @@ impl SharedState {
     }
 
     pub(super) fn clear(&self) {
-        self.inner.lock().latencies = AHashMap::with_capacity(1);
+        self.inner.lock().latencies = HashMap::with_capacity(1);
     }
 
     pub(super) fn update_average(&self, addr: SocketAddr) {

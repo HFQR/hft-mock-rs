@@ -16,6 +16,7 @@ use tokio::{
     select,
     time::{interval, timeout},
 };
+use fall::Tick;
 use tracing::{error, info};
 use xitca_http::{config::HttpServiceConfig, HttpServiceBuilder};
 use xitca_io::net::TcpStream;
@@ -31,11 +32,11 @@ pub fn run<A, A2, A3, A4>(
     multicast_addr: A3,
     http_addr: A4,
 ) -> io::Result<()>
-where
-    A: ToSocketAddrs + Clone,
-    A2: ToSocketAddrs,
-    A3: ToSocketAddrs,
-    A4: ToSocketAddrs,
+    where
+        A: ToSocketAddrs + Clone,
+        A2: ToSocketAddrs,
+        A3: ToSocketAddrs,
+        A4: ToSocketAddrs,
 {
     _run(addr, udp_addr, multicast_addr, http_addr, handle)
 }
@@ -47,17 +48,17 @@ fn _run<A, A2, A3, A4, F, Fut, T, E>(
     http_addr: A4,
     handler: F,
 ) -> io::Result<()>
-where
-    A: ToSocketAddrs + Clone,
-    A2: ToSocketAddrs,
-    A3: ToSocketAddrs,
-    A4: ToSocketAddrs,
-    F: Fn((TcpStream, SocketAddr), Arc<UdpSocket>, SharedState) -> Fut
+    where
+        A: ToSocketAddrs + Clone,
+        A2: ToSocketAddrs,
+        A3: ToSocketAddrs,
+        A4: ToSocketAddrs,
+        F: Fn((TcpStream, SocketAddr), Arc<UdpSocket>, SharedState) -> Fut
         + Clone
         + Send
         + Sync
         + 'static,
-    Fut: Future<Output = Result<T, E>>,
+        Fut: Future<Output=Result<T, E>>,
 {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -134,17 +135,22 @@ async fn udp_listener(
             return Err(io::Error::new(
                 io::ErrorKind::AddrNotAvailable,
                 "Multicast through Ipv6 is not supported",
-            ))
+            ));
         }
     };
 
     tokio::task::spawn_local(async move {
-        let tick = rem::proto::response::TickLevel2::dummy(0);
+        let tick: Vec<Tick> = Vec::new();
+        let mut index = 0;
         let mut interval = interval(Duration::from_millis(500));
         loop {
-            udp.send_to(tick.as_slice(), multicast_addr).await.unwrap();
+            if index >= tick.len() {
+                continue;
+            }
+            udp.send_to(tick[index].dummy().as_slice(), multicast_addr).await.unwrap();
             let now = interval.tick().await;
             shared_state.tick(now);
+            index += 1;
         }
     });
 
@@ -203,7 +209,7 @@ async fn handle_inner(
                     interval: Duration::from_micros(1000),
                 },
             }
-            .encode(&mut buf);
+                .encode(&mut buf);
             stream.write_all(buf.chunk()).await?;
             buf.clear();
 
@@ -252,7 +258,7 @@ async fn handle_inner(
                 date: date(),
                 max_token: 0,
             }
-            .encode(&mut buf);
+                .encode(&mut buf);
             stream.write_all(buf.chunk()).await?;
             buf.clear();
 
@@ -358,15 +364,15 @@ fn encode<const N: usize>(write_buf: &mut Buf<N>, response: &mut VecDeque<MsgRes
     while let Some(res) = response.pop_front() {
         match res {
             MsgResponse::Order(order)
-                if write_buf.chunk_mut().len() >= response::OrderAccept::MSG_LEN =>
-            {
-                order.encode(write_buf);
-            }
+            if write_buf.chunk_mut().len() >= response::OrderAccept::MSG_LEN =>
+                {
+                    order.encode(write_buf);
+                }
             MsgResponse::Cancel(cancel)
-                if write_buf.chunk_mut().len() >= response::Cancel::MSG_LEN =>
-            {
-                cancel.encode(write_buf);
-            }
+            if write_buf.chunk_mut().len() >= response::Cancel::MSG_LEN =>
+                {
+                    cancel.encode(write_buf);
+                }
             res => {
                 response.push_front(res);
                 break;
